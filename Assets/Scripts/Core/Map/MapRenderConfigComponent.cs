@@ -1,6 +1,4 @@
-using Unity.Entities;
-
-using Unity.Entities;
+using Unity.Entities; 
 
 namespace OpenTTD.Core.Map
 {

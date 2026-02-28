@@ -1,5 +1,4 @@
-using Unity.Burst;
-using Unity.Burst;
+using Unity.Burst; 
 using Unity.Collections;
 using Unity.Entities;
 using Unity.Jobs;
@@ -15,7 +14,7 @@ namespace OpenTTD.Core.Map
     public partial struct MapDataGenerationSystem : ISystem
     {
         [BurstCompile]
-        public void OnCreate(ref SystemState state)
+        public readonly void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
         }
@@ -56,7 +55,7 @@ namespace OpenTTD.Core.Map
     public partial struct MapVisualSpawnSystem : ISystem
     {
         [BurstCompile]
-        public void OnCreate(ref SystemState state)
+        public readonly void OnCreate(ref SystemState state)
         {
             state.RequireForUpdate<EndInitializationEntityCommandBufferSystem.Singleton>();
         }
