@@ -1,5 +1,6 @@
 #nullable enable
 using System;
+using System.Runtime.CompilerServices;
 using Unity.Burst;
 using Unity.Collections;
 using Unity.Jobs;
@@ -17,8 +18,7 @@ namespace OpenTTD.Core.WorldGen
     /// </summary>
     public struct WorldGenScheduler : IDisposable
     {
-        public readonly ulong WorldSeed;
-        public readonly byte SeaLevel;
+        public readonly WorldGenConfig Config;
 
         private NativeQueue<int> _pendingChunks;
         private NativeQueue<int> _completedChunks;
@@ -33,10 +33,9 @@ namespace OpenTTD.Core.WorldGen
         /// <summary>
         /// Creates a scheduler and enqueues all chunks for generation.
         /// </summary>
-        public WorldGenScheduler(ulong worldSeed, byte seaLevel, Allocator alloc)
+        public WorldGenScheduler(in WorldGenConfig config, Allocator alloc)
         {
-            WorldSeed = worldSeed;
-            SeaLevel = seaLevel;
+            Config = config;
             _pendingChunks = new NativeQueue<int>(alloc);
             _completedChunks = new NativeQueue<int>(alloc);
             _currentBatch = default;
@@ -45,6 +44,22 @@ namespace OpenTTD.Core.WorldGen
             {
                 _pendingChunks.Enqueue(i);
             }
+        }
+
+        /// <summary>
+        /// Compatibility constructor using seed + sea-level input.
+        /// </summary>
+        public WorldGenScheduler(ulong worldSeed, byte seaLevel, Allocator alloc)
+            : this(CreateConfig(worldSeed, seaLevel), alloc)
+        {
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        private static WorldGenConfig CreateConfig(ulong worldSeed, byte seaLevel)
+        {
+            WorldGenConfig config = WorldGenConfig.Default(worldSeed);
+            config.SeaLevel = seaLevel;
+            return config;
         }
 
         /// <summary>
@@ -97,8 +112,7 @@ namespace OpenTTD.Core.WorldGen
             int n = maxChunksThisBatch;
             JobHandle combined = default;
 
-            ulong seedHeight = Hash64.DeriveStageSeed(WorldSeed, "height");
-            ulong seedRivers = Hash64.DeriveStageSeed(WorldSeed, "rivers");
+            ulong seedHeight = Hash64.DeriveStageSeed(Config.WorldSeed, "height");
 
             for (int i = 0; i < n && _pendingChunks.Count > 0; i++)
             {
@@ -110,48 +124,17 @@ namespace OpenTTD.Core.WorldGen
                 JobHandle hJob = new HeightFieldGenJob
                 {
                     SeedHeight = seedHeight,
+                    Config = Config,
                     ChunkX = cc.X,
                     ChunkY = cc.Y,
                     OutHeight = c.Height
                 }.Schedule(c.Height.Length, 128, combined);
 
-                JobHandle rJob = new RiverGenJob
-                {
-                    SeedRivers = seedRivers,
-                    ChunkX = cc.X,
-                    ChunkY = cc.Y,
-                    SeaLevel = world.SeaLevel,
-                    Height = c.Height,
-                    RiverMask = c.RiverMask,
-                    RiversPerChunk = 1
-                }.Schedule(hJob);
-
-                JobHandle bJob = new BiomeGenJob
-                {
-                    ChunkX = cc.X,
-                    ChunkY = cc.Y,
-                    SeaLevel = world.SeaLevel,
-                    Height = c.Height,
-                    RiverMask = c.RiverMask,
-                    OutBiome = c.Biome
-                }.Schedule(c.Height.Length, 128, rJob);
-
-                JobHandle dJob = new DerivedSlopeBuildJob
-                {
-                    ChunkX = cc.X,
-                    ChunkY = cc.Y,
-                    SeaLevel = world.SeaLevel,
-                    World = world,
-                    OutSlope = c.Slope,
-                    OutBuildMask = c.BuildMask,
-                    RiverMask = c.RiverMask
-                }.Schedule(c.Height.Length, 128, bJob);
-
                 JobHandle doneJob = new EnqueueCompletedChunkJob
                 {
                     ChunkIndex = chunkIndex,
                     Completed = _completedChunks.AsParallelWriter()
-                }.Schedule(dJob);
+                }.Schedule(hJob);
 
                 combined = JobHandle.CombineDependencies(combined, doneJob);
             }

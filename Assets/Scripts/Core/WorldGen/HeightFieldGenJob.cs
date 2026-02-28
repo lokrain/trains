@@ -13,6 +13,7 @@ namespace OpenTTD.Core.WorldGen
     public struct HeightFieldGenJob : IJobParallelFor
     {
         public ulong SeedHeight;
+        public WorldGenConfig Config;
 
         /// <summary>
         /// Chunk X coordinate in [0..31].
@@ -40,18 +41,32 @@ namespace OpenTTD.Core.WorldGen
             int xQ16 = x << 16;
             int yQ16 = y << 16;
 
-            uint n0 = ValueNoise2D.SampleQ16(SeedHeight, xQ16, yQ16, gridSizeTiles: 256);
-            uint n1 = ValueNoise2D.SampleQ16(SeedHeight + 1, xQ16, yQ16, gridSizeTiles: 128);
-            uint n2 = ValueNoise2D.SampleQ16(SeedHeight + 2, xQ16, yQ16, gridSizeTiles: 64);
-            uint n3 = ValueNoise2D.SampleQ16(SeedHeight + 3, xQ16, yQ16, gridSizeTiles: 32);
+            uint n0 = ValueNoise2D.SampleQ16(SeedHeight, xQ16, yQ16, Config.BaseGridTiles);
+            uint n1 = ValueNoise2D.SampleQ16(SeedHeight + 1, xQ16, yQ16, Config.Octave1GridTiles);
+            uint n2 = ValueNoise2D.SampleQ16(SeedHeight + 2, xQ16, yQ16, Config.Octave2GridTiles);
+            uint n3 = ValueNoise2D.SampleQ16(SeedHeight + 3, xQ16, yQ16, Config.Octave3GridTiles);
 
             uint acc =
-                (uint)(((ulong)n0 * 29491ul + (ulong)n1 * 16384ul + (ulong)n2 * 11796ul + (ulong)n3 * 7864ul) >> 16);
+                (uint)(((ulong)n0 * Config.W0_Q16 + (ulong)n1 * Config.W1_Q16 + (ulong)n2 * Config.W2_Q16 + (ulong)n3 * Config.W3_Q16) >> 16);
 
-            byte h = (byte)(acc >> 8);
+            byte h = (byte)((acc >> 8) * Config.BaseAmplitude / 255u);
 
-            uint hh = (uint)h * h;
-            h = (byte)(hh / 255u);
+            switch (Config.HeightCurve)
+            {
+                case 1:
+                {
+                    uint hh = (uint)h * h;
+                    h = (byte)(hh / 255u);
+                    break;
+                }
+                case 2:
+                {
+                    uint hh = (uint)h * h;
+                    uint hhh = hh * h;
+                    h = (byte)(hhh / 65025u);
+                    break;
+                }
+            }
 
             OutHeight[index] = h;
         }

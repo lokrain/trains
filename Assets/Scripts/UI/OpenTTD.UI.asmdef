@@ -1,0 +1,20 @@
+{
+  "name": "OpenTTD.UI",
+  "rootNamespace": "OpenTTD.UI",
+  "references": [
+    "OpenTTD.World",
+    "OpenTTD.Build",
+    "OpenTTD.Transport",
+    "OpenTTD.Vehicles",
+    "OpenTTD.Economy"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

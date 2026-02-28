@@ -1,0 +1,28 @@
+graph TD
+    OpenTTD.Build --> OpenTTD.World
+    OpenTTD.Economy --> OpenTTD.Vehicles
+    OpenTTD.Economy --> OpenTTD.Transport
+    OpenTTD.Infra.Persistence
+    OpenTTD.Net.Client --> OpenTTD.Net.Protocol
+    OpenTTD.Net.Client --> OpenTTD.World
+    OpenTTD.Net.Protocol --> OpenTTD.World
+    OpenTTD.Net.Server --> OpenTTD.Net.Protocol
+    OpenTTD.Net.Server --> OpenTTD.World
+    OpenTTD.Net.Server --> OpenTTD.Transport
+    OpenTTD.Net.Server --> OpenTTD.Vehicles
+    OpenTTD.Net.Server --> OpenTTD.Economy
+    OpenTTD.Net.Server --> OpenTTD.Infra.Persistence
+    OpenTTD.Presentation.WorldRendering --> OpenTTD.World
+    OpenTTD.SaveLoad --> OpenTTD.World
+    OpenTTD.SaveLoad --> OpenTTD.Transport
+    OpenTTD.SaveLoad --> OpenTTD.Vehicles
+    OpenTTD.SaveLoad --> OpenTTD.Economy
+    OpenTTD.SaveLoad --> OpenTTD.Infra.Persistence
+    OpenTTD.Transport --> OpenTTD.World
+    OpenTTD.UI --> OpenTTD.World
+    OpenTTD.UI --> OpenTTD.Build
+    OpenTTD.UI --> OpenTTD.Transport
+    OpenTTD.UI --> OpenTTD.Vehicles
+    OpenTTD.UI --> OpenTTD.Economy
+    OpenTTD.Vehicles --> OpenTTD.Transport
+    OpenTTD.World

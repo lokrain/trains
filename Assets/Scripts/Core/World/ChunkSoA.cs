@@ -13,6 +13,26 @@ namespace OpenTTD.Core.World
     public struct ChunkSoA : IDisposable
     {
         /// <summary>
+        /// Dirty rect local min X (0..63), 255 when not initialized.
+        /// </summary>
+        public byte DirtyMinX;
+
+        /// <summary>
+        /// Dirty rect local min Y (0..63), 255 when not initialized.
+        /// </summary>
+        public byte DirtyMinY;
+
+        /// <summary>
+        /// Dirty rect local max X (0..63).
+        /// </summary>
+        public byte DirtyMaxX;
+
+        /// <summary>
+        /// Dirty rect local max Y (0..63).
+        /// </summary>
+        public byte DirtyMaxY;
+
+        /// <summary>
         /// Tile height data [4096].
         /// </summary>
         public NativeArray<byte> Height;
@@ -68,8 +88,58 @@ namespace OpenTTD.Core.World
                 Slope = new NativeArray<byte>(n, allocator, NativeArrayOptions.UninitializedMemory),
                 BuildMask = new NativeArray<ushort>(n, allocator, NativeArrayOptions.UninitializedMemory),
                 Versions = default,
-                Dirty = ChunkDirtyFlags.None
+                Dirty = ChunkDirtyFlags.None,
+                DirtyMinX = byte.MaxValue,
+                DirtyMinY = byte.MaxValue,
+                DirtyMaxX = 0,
+                DirtyMaxY = 0
             };
+        }
+
+        /// <summary>
+        /// Adds a local tile position to dirty rect accumulator.
+        /// </summary>
+        public void MarkDirtyTile(byte lx, byte ly)
+        {
+            if (DirtyMinX == byte.MaxValue)
+            {
+                DirtyMinX = lx;
+                DirtyMaxX = lx;
+                DirtyMinY = ly;
+                DirtyMaxY = ly;
+                return;
+            }
+
+            if (lx < DirtyMinX)
+            {
+                DirtyMinX = lx;
+            }
+
+            if (lx > DirtyMaxX)
+            {
+                DirtyMaxX = lx;
+            }
+
+            if (ly < DirtyMinY)
+            {
+                DirtyMinY = ly;
+            }
+
+            if (ly > DirtyMaxY)
+            {
+                DirtyMaxY = ly;
+            }
+        }
+
+        /// <summary>
+        /// Clears dirty rect accumulator.
+        /// </summary>
+        public void ClearDirtyRect()
+        {
+            DirtyMinX = byte.MaxValue;
+            DirtyMinY = byte.MaxValue;
+            DirtyMaxX = 0;
+            DirtyMaxY = 0;
         }
 
         /// <summary>

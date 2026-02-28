@@ -1,0 +1,17 @@
+{ 
+  "name": "OpenTTD.Economy",
+  "rootNamespace": "OpenTTD.Economy",
+  "references": [
+    "OpenTTD.Vehicles",
+    "OpenTTD.Transport"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

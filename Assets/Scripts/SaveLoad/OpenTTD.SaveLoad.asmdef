@@ -1,0 +1,20 @@
+{ 
+  "name": "OpenTTD.SaveLoad",
+  "rootNamespace": "OpenTTD.SaveLoad",
+  "references": [
+    "OpenTTD.World",
+    "OpenTTD.Transport",
+    "OpenTTD.Vehicles",
+    "OpenTTD.Economy",
+    "OpenTTD.Infra.Persistence"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

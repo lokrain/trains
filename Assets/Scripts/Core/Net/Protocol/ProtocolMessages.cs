@@ -14,7 +14,20 @@ namespace OpenTTD.Core.Net.Protocol
     {
         public const byte ServerHelloPayloadVer = 1;
         public const byte ChunkSnapshotFragPayloadVer = 1;
+        public const byte ChunkPatchRectPayloadVer = 1;
         public const byte ResyncChunkRequestPayloadVer = 1;
+
+        /// <summary>
+        /// Chunk resync trigger reasons.
+        /// </summary>
+        public enum ResyncReasonCode : byte
+        {
+            Unknown = 0,
+            PatchBaseMismatch = 1,
+            SnapshotCrcMismatch = 2,
+            SnapshotTimeout = 3,
+            MalformedPayload = 4
+        }
 
         /// <summary>
         /// Writes ServerHello payload bytes.
@@ -95,6 +108,11 @@ namespace OpenTTD.Core.Net.Protocol
                 return false;
             }
 
+            if (cfgLen != WorldGenConfigBlob.SizeBytes)
+            {
+                return false;
+            }
+
             cfg = WorldGenConfigBlob.Read(src.Slice(o, cfgLen));
             o += cfgLen;
 
@@ -126,6 +144,11 @@ namespace OpenTTD.Core.Net.Protocol
             }
 
             if (chunkSize != WorldConstants.ChunkSize)
+            {
+                return false;
+            }
+
+            if (!WorldGenConfigValidation.TryValidate(cfg, out _))
             {
                 return false;
             }
@@ -166,7 +189,7 @@ namespace OpenTTD.Core.Net.Protocol
             WriteU16(dst, ref o, (ushort)fragPayload.Length);
             WriteU16(dst, ref o, codec);
 
-            fragPayload.CopyTo(dst.Slice(o));
+            fragPayload.CopyTo(dst[o..]);
             o += fragPayload.Length;
             return o;
         }
@@ -238,11 +261,130 @@ namespace OpenTTD.Core.Net.Protocol
         }
 
         /// <summary>
-        /// Writes ResyncChunkRequest payload bytes.
+        /// Writes ChunkPatchRect payload bytes.
         /// </summary>
-        public static int WriteResyncChunkRequest(short cx, short cy, uint clientSnapshotId, Span<byte> dst)
+        public static int WriteChunkPatchRect(
+            short cx,
+            short cy,
+            uint baseSnapshotId,
+            uint newSnapshotId,
+            byte rx,
+            byte ry,
+            byte rw,
+            byte rh,
+            byte fieldMask,
+            byte patchCodec,
+            ReadOnlySpan<byte> patchPayload,
+            Span<byte> dst)
         {
-            int needed = 1 + 2 + 2 + 4;
+            int needed = 1 + 2 + 2 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 2 + patchPayload.Length;
+            if (dst.Length < needed)
+            {
+                throw new ArgumentOutOfRangeException(nameof(dst));
+            }
+
+            int o = 0;
+            dst[o++] = ChunkPatchRectPayloadVer;
+            WriteI16(dst, ref o, cx);
+            WriteI16(dst, ref o, cy);
+            WriteU32(dst, ref o, baseSnapshotId);
+            WriteU32(dst, ref o, newSnapshotId);
+            dst[o++] = rx;
+            dst[o++] = ry;
+            dst[o++] = rw;
+            dst[o++] = rh;
+            dst[o++] = fieldMask;
+            dst[o++] = patchCodec;
+            WriteU16(dst, ref o, (ushort)patchPayload.Length);
+            patchPayload.CopyTo(dst[o..]);
+            o += patchPayload.Length;
+            return o;
+        }
+
+        /// <summary>
+        /// Reads ChunkPatchRect payload bytes.
+        /// </summary>
+        public static bool TryReadChunkPatchRect(
+            ReadOnlySpan<byte> src,
+            out short cx,
+            out short cy,
+            out uint baseSnapshotId,
+            out uint newSnapshotId,
+            out byte rx,
+            out byte ry,
+            out byte rw,
+            out byte rh,
+            out byte fieldMask,
+            out byte patchCodec,
+            out ReadOnlySpan<byte> patchPayload)
+        {
+            cx = 0;
+            cy = 0;
+            baseSnapshotId = 0;
+            newSnapshotId = 0;
+            rx = 0;
+            ry = 0;
+            rw = 0;
+            rh = 0;
+            fieldMask = 0;
+            patchCodec = 0;
+            patchPayload = default;
+
+            if (src.Length < 1)
+            {
+                return false;
+            }
+
+            int o = 0;
+            byte ver = src[o++];
+            if (ver != ChunkPatchRectPayloadVer)
+            {
+                return false;
+            }
+
+            if (src.Length < o + 2 + 2 + 4 + 4 + 1 + 1 + 1 + 1 + 1 + 1 + 2)
+            {
+                return false;
+            }
+
+            cx = ReadI16(src, ref o);
+            cy = ReadI16(src, ref o);
+            baseSnapshotId = ReadU32(src, ref o);
+            newSnapshotId = ReadU32(src, ref o);
+            rx = src[o++];
+            ry = src[o++];
+            rw = src[o++];
+            rh = src[o++];
+            fieldMask = src[o++];
+            patchCodec = src[o++];
+            ushort patchLen = ReadU16(src, ref o);
+
+            if (rw == 0 || rh == 0)
+            {
+                return false;
+            }
+
+            if (src.Length < o + patchLen)
+            {
+                return false;
+            }
+
+            patchPayload = src.Slice(o, patchLen);
+            return true;
+        }
+
+        /// <summary>
+        /// Writes chunk resync request payload bytes.
+        /// </summary>
+        public static int WriteChunkResyncRequest(
+            short cx,
+            short cy,
+            uint expectedBaseSnapshotId,
+            uint clientSnapshotId,
+            ResyncReasonCode reason,
+            Span<byte> dst)
+        {
+            int needed = 1 + 2 + 2 + 4 + 4 + 1;
             if (dst.Length < needed)
             {
                 throw new ArgumentOutOfRangeException(nameof(dst));
@@ -252,8 +394,24 @@ namespace OpenTTD.Core.Net.Protocol
             dst[o++] = ResyncChunkRequestPayloadVer;
             WriteI16(dst, ref o, cx);
             WriteI16(dst, ref o, cy);
+            WriteU32(dst, ref o, expectedBaseSnapshotId);
             WriteU32(dst, ref o, clientSnapshotId);
+            dst[o++] = (byte)reason;
             return o;
+        }
+
+        /// <summary>
+        /// Writes ResyncChunkRequest payload bytes.
+        /// </summary>
+        public static int WriteResyncChunkRequest(short cx, short cy, uint clientSnapshotId, Span<byte> dst)
+        {
+            return WriteChunkResyncRequest(
+                cx,
+                cy,
+                clientSnapshotId,
+                clientSnapshotId,
+                ResyncReasonCode.Unknown,
+                dst);
         }
 
         /// <summary>
@@ -282,9 +440,65 @@ namespace OpenTTD.Core.Net.Protocol
                 return false;
             }
 
+            if (src.Length >= o + 2 + 2 + 4 + 4 + 1)
+            {
+                cx = ReadI16(src, ref o);
+                cy = ReadI16(src, ref o);
+                ReadU32(src, ref o);
+                clientSnapshotId = ReadU32(src, ref o);
+                return true;
+            }
+
             cx = ReadI16(src, ref o);
             cy = ReadI16(src, ref o);
             clientSnapshotId = ReadU32(src, ref o);
+            return true;
+        }
+
+        /// <summary>
+        /// Reads chunk resync request payload bytes.
+        /// </summary>
+        public static bool TryReadChunkResyncRequest(
+            ReadOnlySpan<byte> src,
+            out short cx,
+            out short cy,
+            out uint expectedBaseSnapshotId,
+            out uint clientSnapshotId,
+            out ResyncReasonCode reason)
+        {
+            cx = 0;
+            cy = 0;
+            expectedBaseSnapshotId = 0;
+            clientSnapshotId = 0;
+            reason = ResyncReasonCode.Unknown;
+
+            if (src.Length < 1)
+            {
+                return false;
+            }
+
+            int o = 0;
+            byte ver = src[o++];
+            if (ver != ResyncChunkRequestPayloadVer)
+            {
+                return false;
+            }
+
+            if (src.Length < o + 2 + 2 + 4 + 4 + 1)
+            {
+                return false;
+            }
+
+            cx = ReadI16(src, ref o);
+            cy = ReadI16(src, ref o);
+            expectedBaseSnapshotId = ReadU32(src, ref o);
+            clientSnapshotId = ReadU32(src, ref o);
+            reason = (ResyncReasonCode)src[o++];
+            if (reason > ResyncReasonCode.MalformedPayload)
+            {
+                return false;
+            }
+
             return true;
         }
 

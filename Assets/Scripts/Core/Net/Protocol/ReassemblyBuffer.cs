@@ -54,6 +54,16 @@ namespace OpenTTD.Core.Net.Protocol
                 return false;
             }
 
+            if (fragOffset < 0)
+            {
+                return false;
+            }
+
+            if (fragOffset + payload.Length > TotalLen)
+            {
+                return false;
+            }
+
             if (_got[fragIndex])
             {
                 return true;

@@ -16,6 +16,7 @@ namespace OpenTTD.Core.WorldGen
         public int ChunkX;
         public int ChunkY;
         public byte SeaLevel;
+        public WorldGenConfig Config;
 
         /// <summary>
         /// Full world chunk array for ghost-ring neighbor height reads.
@@ -53,7 +54,15 @@ namespace OpenTTD.Core.WorldGen
             byte hE = TileAccessor.GetHeightClamped(ref World, wx + 1, wy);
             byte hW = TileAccessor.GetHeightClamped(ref World, wx - 1, wy);
 
-            byte slopeClass = TileAccessor.ComputeSlopeClass(hC, hN, hS, hE, hW);
+            byte slopeClass = TileAccessor.ComputeSlopeClass(
+                hC,
+                hN,
+                hS,
+                hE,
+                hW,
+                Config.SlopeClass1MaxDelta,
+                Config.SlopeClass2MaxDelta,
+                Config.SlopeClass3MaxDelta);
             OutSlope[index] = slopeClass;
 
             bool isRiver = RiverMask[index] != 0;
@@ -71,24 +80,24 @@ namespace OpenTTD.Core.WorldGen
                 mask |= BuildMaskBits.IsRiver;
             }
 
-            if (!isRiver)
+            if (!isRiver || Config.AllowTerraformOnRivers != 0)
             {
                 mask |= BuildMaskBits.CanTerraform;
             }
 
             if (!isSea && !isRiver)
             {
-                if (slopeClass <= 1)
+                if (slopeClass <= Config.MaxRailSlopeClassForStations)
                 {
                     mask |= BuildMaskBits.CanPlaceRail | BuildMaskBits.CanPlaceStation;
                 }
 
-                if (slopeClass == 2)
+                if (slopeClass > Config.MaxRailSlopeClassForStations && slopeClass <= Config.MaxRailSlopeClassForTrack)
                 {
                     mask |= BuildMaskBits.CanPlaceRail;
                 }
 
-                if (slopeClass >= 3)
+                if (slopeClass > Config.MaxRailSlopeClassForTrack)
                 {
                     mask |= BuildMaskBits.CanTunnelCandidate;
                 }

@@ -1,0 +1,23 @@
+{ 
+  "name": "OpenTTD.Net.Server",
+  "rootNamespace": "OpenTTD.Net.Server",
+  "references": [
+    "OpenTTD.Net.Protocol",
+    "OpenTTD.World",
+    "OpenTTD.Transport",
+    "OpenTTD.Vehicles",
+    "OpenTTD.Economy",
+    "OpenTTD.Infra.Persistence"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "UNITY_SERVER"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

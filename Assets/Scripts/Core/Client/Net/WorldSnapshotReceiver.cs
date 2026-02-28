@@ -1,6 +1,5 @@
 #nullable enable
 using System;
-using System.Collections.Generic;
 using OpenTTD.Core.Net.Protocol;
 using OpenTTD.Core.World;
 
@@ -14,24 +13,30 @@ namespace OpenTTD.Core.Client.Net
     {
         private readonly ICompressor _compressor;
         private readonly int _fragPayloadCap;
+        private readonly ReplicationCounters? _counters;
+        private ReplicationErrorCode _lastErrorCode;
 
-        private readonly Dictionary<ulong, ReassemblyBuffer> _reassembly = new Dictionary<ulong, ReassemblyBuffer>(256);
+        private readonly SnapshotReassemblyManager _reassembly;
         private readonly byte[] _decompressedScratch = new byte[8 + 4096 * 3];
 
-        public WorldSnapshotReceiver(ICompressor compressor, int fragPayloadCap)
+        public WorldSnapshotReceiver(
+            ICompressor compressor,
+            int fragPayloadCap,
+            ulong transferTimeoutTicks = 300,
+            ReplicationCounters? counters = null)
         {
             _compressor = compressor;
             _fragPayloadCap = fragPayloadCap;
+            _reassembly = new SnapshotReassemblyManager(transferTimeoutTicks);
+            _counters = counters;
+            _lastErrorCode = ReplicationErrorCode.None;
         }
+
+        public ReplicationErrorCode LastErrorCode => _lastErrorCode;
 
         public void Dispose()
         {
-            foreach (KeyValuePair<ulong, ReassemblyBuffer> kv in _reassembly)
-            {
-                kv.Value.Dispose();
-            }
-
-            _reassembly.Clear();
+            _reassembly.Dispose();
         }
 
         private static ulong Key(int chunkIndex, uint snapshotId)
@@ -39,8 +44,17 @@ namespace OpenTTD.Core.Client.Net
             return ((ulong)(uint)chunkIndex) | ((ulong)snapshotId << 32);
         }
 
-        public bool OnChunkSnapshotFragBody(ref WorldChunkArray world, ReadOnlySpan<byte> body)
+        public int EvictExpiredTransfers(ulong nowTick)
         {
+            int evicted = _reassembly.EvictExpired(nowTick);
+            _counters?.AddSnapshotTransferTimeoutEvictions(evicted);
+            return evicted;
+        }
+
+        public bool OnChunkSnapshotFragBody(ref WorldChunkArray world, ReadOnlySpan<byte> body, ulong nowTick)
+        {
+            _lastErrorCode = ReplicationErrorCode.None;
+
             if (!ProtocolMessages.TryReadChunkSnapshotFrag(
                 body,
                 out short cx,
@@ -53,31 +67,90 @@ namespace OpenTTD.Core.Client.Net
                 out ushort codec,
                 out ReadOnlySpan<byte> fragPayload))
             {
+                _lastErrorCode = ReplicationErrorCode.MalformedPayload;
                 return false;
             }
 
+            _counters?.IncrementSnapshotFragmentsReceived();
+
             if (codec != 1)
             {
+                _lastErrorCode = ReplicationErrorCode.UnsupportedCodec;
+                return false;
+            }
+
+            if (_fragPayloadCap <= 0)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                return false;
+            }
+
+            if (totalLen == 0 || totalLen > int.MaxValue)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                return false;
+            }
+
+            if (fragCount == 0)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                return false;
+            }
+
+            if (fragLen == 0 || fragLen > _fragPayloadCap)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                return false;
+            }
+
+            if (fragPayload.Length != fragLen)
+            {
+                _lastErrorCode = ReplicationErrorCode.MalformedPayload;
+                return false;
+            }
+
+            long maxCoveredLen = (long)fragCount * _fragPayloadCap;
+            if (totalLen > maxCoveredLen)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
                 return false;
             }
 
             int chunkIndex = WorldConstants.ChunkIndex(cx, cy);
             ulong k = Key(chunkIndex, snapshotId);
 
-            ReassemblyBuffer buf;
-            if (!_reassembly.TryGetValue(k, out buf))
+            if (!_reassembly.TryGetOrCreate(k, (int)totalLen, fragCount, nowTick, out ReassemblyBuffer? buf) || buf == null)
             {
-                if (totalLen > 64 * 1024)
-                {
-                    return false;
-                }
-
-                buf = new ReassemblyBuffer((int)totalLen, fragCount);
-                _reassembly.Add(k, buf);
+                _lastErrorCode = ReplicationErrorCode.ReassemblyCreateFailed;
+                return false;
             }
 
-            int fragOffset = fragIndex * _fragPayloadCap;
-            buf.TryAdd(fragIndex, fragPayload, fragOffset);
+            long fragOffsetLong = (long)fragIndex * _fragPayloadCap;
+            if (fragOffsetLong < 0 || fragOffsetLong > int.MaxValue)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                Cleanup(k);
+                return false;
+            }
+
+            long fragEnd = fragOffsetLong + fragLen;
+            if (fragEnd > totalLen)
+            {
+                _lastErrorCode = ReplicationErrorCode.InvalidTransferMetadata;
+                Cleanup(k);
+                return false;
+            }
+
+            int fragOffset = (int)fragOffsetLong;
+            if (!buf.TryAdd(fragIndex, fragPayload, fragOffset))
+            {
+                _counters?.IncrementSnapshotReassemblyFailures();
+                _lastErrorCode = ReplicationErrorCode.ReassemblyAddFailed;
+                Cleanup(k);
+                return false;
+            }
+
+            _reassembly.Touch(k, nowTick);
 
             if (!buf.IsComplete)
             {
@@ -100,6 +173,8 @@ namespace OpenTTD.Core.Client.Net
                 out ChunkSnapshotCodec.Header header,
                 out ReadOnlySpan<byte> payload))
             {
+                _counters?.IncrementSnapshotReassemblyFailures();
+                _lastErrorCode = ReplicationErrorCode.DecodeFailed;
                 Cleanup(k);
                 return false;
             }
@@ -107,6 +182,8 @@ namespace OpenTTD.Core.Client.Net
             ChunkSoA c = world.GetChunk(cx, cy);
             if (!ChunkSnapshotCodec.ApplyDecodedPayloadToChunk(header, payload, ref c))
             {
+                _counters?.IncrementSnapshotReassemblyFailures();
+                _lastErrorCode = ReplicationErrorCode.ApplyFailed;
                 Cleanup(k);
                 return false;
             }
@@ -120,12 +197,7 @@ namespace OpenTTD.Core.Client.Net
 
         private void Cleanup(ulong k)
         {
-            ReassemblyBuffer b;
-            if (_reassembly.TryGetValue(k, out b))
-            {
-                b.Dispose();
-                _reassembly.Remove(k);
-            }
+            _reassembly.Remove(k);
         }
     }
 }

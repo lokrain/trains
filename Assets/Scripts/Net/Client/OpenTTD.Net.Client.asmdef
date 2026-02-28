@@ -1,0 +1,19 @@
+{ 
+  "name": "OpenTTD.Net.Client",
+  "rootNamespace": "OpenTTD.Net.Client",
+  "references": [
+    "OpenTTD.Net.Protocol",
+    "OpenTTD.World"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [
+    "!UNITY_SERVER"
+  ],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

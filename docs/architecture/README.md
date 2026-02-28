@@ -24,6 +24,10 @@ This directory contains production-reference architecture documents for the Open
   - Deterministic mutable rail topology with stable IDs, compact SoA storage, and compaction-safe replication
   - Day-0 production checklist for allocator, adjacency pool, spatial edge index, and versioning
 
+- `ASMDEF-DEPENDENCY-GRAPH.md`
+  - Asmdef dependency validation, cycle detection, and Mermaid graph generation
+  - CI enforcement policy and one-way dependency guidance
+
 ## Usage
 
 Use these documents as the source of truth for:
@@ -31,6 +35,11 @@ Use these documents as the source of truth for:
 - deterministic networking decisions
 - ECS system group boundaries and update order
 - map/chunk storage and derived-field recompute policy
+
+## ADRs
+
+- `../adr/README.md`
+  - Sprint 1 architecture decisions for deterministic tick policy, RNG partitioning, protocol envelope v1, and asmdef dependency rules
 
 ## Current implementation policy
 

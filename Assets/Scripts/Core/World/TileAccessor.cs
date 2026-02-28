@@ -49,7 +49,7 @@ namespace OpenTTD.Core.World
         }
 
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static byte ComputeSlopeClass(byte hC, byte hN, byte hS, byte hE, byte hW)
+        public static byte ComputeSlopeClass(byte hC, byte hN, byte hS, byte hE, byte hW, byte class1MaxDelta = 1, byte class2MaxDelta = 3, byte class3MaxDelta = 6)
         {
             int dn = math.abs(hC - hN);
             int ds = math.abs(hC - hS);
@@ -57,17 +57,17 @@ namespace OpenTTD.Core.World
             int dw = math.abs(hC - hW);
             int d = math.max(math.max(dn, ds), math.max(de, dw));
 
-            if (d <= 1)
+            if (d <= class1MaxDelta)
             {
                 return 0;
             }
 
-            if (d <= 3)
+            if (d <= class2MaxDelta)
             {
                 return 1;
             }
 
-            if (d <= 6)
+            if (d <= class3MaxDelta)
             {
                 return 2;
             }

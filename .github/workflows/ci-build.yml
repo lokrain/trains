@@ -1,0 +1,50 @@
+name: ci-build
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build Assembly-CSharp
+        run: dotnet build Assembly-CSharp.csproj -c Release
+
+      - name: Validate asmdef dependency graph
+        shell: pwsh
+        run: .github/scripts/validate-asmdef-deps.ps1 -ShowGraph
+
+      - name: Validate replication self-test suite wiring
+        shell: pwsh
+        run: .github/scripts/validate-replication-selftests.ps1
+
+      - name: Validate Sprint 4 closure evidence files
+        shell: pwsh
+        run: .github/scripts/validate-sprint4-evidence.ps1
+
+      - name: Export asmdef dependency graph (Mermaid)
+        shell: pwsh
+        run: .github/scripts/validate-asmdef-deps.ps1 -AsMermaid -MermaidPath asmdef-deps.mmd
+
+      - name: Export asmdef dependency report (JSON)
+        shell: pwsh
+        run: .github/scripts/validate-asmdef-deps.ps1 -AsJson -JsonPath asmdef-deps.json
+
+      - name: Upload asmdef graph artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: asmdef-deps
+          path: |
+            asmdef-deps.mmd
+            asmdef-deps.json

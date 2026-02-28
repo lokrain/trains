@@ -1,10 +1,10 @@
-using Unity.Collections;
 using Unity.Entities;
+using OpenTTD.Core.World;
 
 namespace OpenTTD.Core.Map
 {
     public struct MapDataComponent : IComponentData
     {
-        public NativeArray<TileData> Map;
+        public WorldChunkArray World;
     }
 }

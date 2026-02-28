@@ -1,0 +1,14 @@
+{
+  "name": "OpenTTD.Infra.Persistence",
+  "rootNamespace": "OpenTTD.Infra.Persistence",
+  "references": [],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

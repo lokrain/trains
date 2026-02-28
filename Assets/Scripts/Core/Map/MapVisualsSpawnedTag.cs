@@ -3,9 +3,9 @@ using Unity.Entities;
 namespace OpenTTD.Core.Map
 {
     /// <summary>
-    /// Marks a map entity whose visual tiles were already instantiated.
+    /// Marks a map entity whose chunk meshes were already built.
     /// </summary>
-    public struct MapVisualsSpawnedTag : IComponentData
+    public struct MapChunkMeshesBuiltTag : IComponentData
     {
     }
 }

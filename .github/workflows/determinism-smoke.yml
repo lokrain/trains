@@ -1,0 +1,68 @@
+name: determinism-smoke
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+
+jobs:
+  determinism-smoke:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Build deterministic infrastructure
+        run: dotnet build Assembly-CSharp.csproj -c Release
+
+      - name: Verify deterministic scaffolding files
+        shell: pwsh
+        run: |
+          $required = @(
+            'Assets/Scripts/Infra/Determinism/DeterministicRngStreams.cs',
+            'Assets/Scripts/Infra/Determinism/DeterministicHashing.cs',
+            'Assets/Scripts/Infra/Determinism/ReplayDeterminismHarness.cs',
+            'Assets/Scripts/Core/Simulation/DeterminismHashSystem.cs',
+            'Assets/Scripts/Core/Net/Protocol/Crc64SelfTest.cs',
+            'Assets/Scripts/Core/Net/Protocol/ReplicationProtocolSelfTest.cs',
+            'Assets/Scripts/Core/Net/Protocol/SnapshotReassemblySelfTest.cs',
+            'Assets/Scripts/Core/Net/Protocol/ReassemblyChurnSelfTest.cs',
+            'Assets/Scripts/Core/Net/Protocol/ReassemblyMemoryTrendSelfTest.cs',
+            'Assets/Scripts/Core/Net/Protocol/ReplicationSelfTestSuite.cs',
+            'Assets/Scripts/Core/Client/Net/WorldPatchReceiverSelfTest.cs',
+            'Assets/Scripts/Core/Client/Net/SnapshotPatchEquivalenceSelfTest.cs',
+            'Assets/Scripts/Core/Client/Net/PatchChainPropertySelfTest.cs',
+            'Assets/Scripts/Core/Server/Net/ChunkStreamSchedulerSelfTest.cs',
+            'Assets/Scripts/Core/WorldGen/RiverSeamScanner.cs',
+            'Assets/Scripts/Core/Simulation/WorldGenDeterminismRunner.cs',
+            'docs/adr/0006-snapshot-fragmentation-reassembly-safety.md',
+            'docs/adr/0007-patch-lineage-mismatch-resync-policy.md',
+            'docs/sprints/Sprint4-Closure-Evidence.md'
+          )
+          foreach ($f in $required) {
+            if (-not (Test-Path $f)) {
+              throw "Missing deterministic scaffold file: $f"
+            }
+          }
+
+      - name: Validate Sprint 4 closure evidence files
+        shell: pwsh
+        run: .github/scripts/validate-sprint4-evidence.ps1
+
+      - name: Validate asmdef dependency graph
+        shell: pwsh
+        run: .github/scripts/validate-asmdef-deps.ps1 -ShowGraph
+
+      - name: Validate replication self-test suite wiring
+        shell: pwsh
+        run: .github/scripts/validate-replication-selftests.ps1
+
+      - name: Export asmdef dependency report (JSON)
+        shell: pwsh
+        run: .github/scripts/validate-asmdef-deps.ps1 -AsJson -JsonPath asmdef-deps.json

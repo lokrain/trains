@@ -1,0 +1,16 @@
+{ 
+  "name": "OpenTTD.Transport",
+  "rootNamespace": "OpenTTD.Transport",
+  "references": [
+    "OpenTTD.World"
+  ],
+  "includePlatforms": [],
+  "excludePlatforms": [],
+  "allowUnsafeCode": false,
+  "overrideReferences": false,
+  "precompiledReferences": [],
+  "autoReferenced": true,
+  "defineConstraints": [],
+  "versionDefines": [],
+  "noEngineReferences": false
+}

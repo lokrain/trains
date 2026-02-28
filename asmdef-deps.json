@@ -1,0 +1,117 @@
+{
+    "root":  "Assets/Scripts",
+    "assemblyCount":  12,
+    "nodes":  [
+                  {
+                      "name":  "OpenTTD.Build",
+                      "references":  [
+                                         "OpenTTD.World"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Build\\OpenTTD.Build.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Economy",
+                      "references":  [
+                                         "OpenTTD.Vehicles",
+                                         "OpenTTD.Transport"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Economy\\OpenTTD.Economy.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Infra.Persistence",
+                      "references":  [
+
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Infra\\Persistence\\OpenTTD.Infra.Persistence.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Net.Client",
+                      "references":  [
+                                         "OpenTTD.Net.Protocol",
+                                         "OpenTTD.World"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Net\\Client\\OpenTTD.Net.Client.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Net.Protocol",
+                      "references":  [
+                                         "OpenTTD.World"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Net\\Protocol\\OpenTTD.Net.Protocol.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Net.Server",
+                      "references":  [
+                                         "OpenTTD.Net.Protocol",
+                                         "OpenTTD.World",
+                                         "OpenTTD.Transport",
+                                         "OpenTTD.Vehicles",
+                                         "OpenTTD.Economy",
+                                         "OpenTTD.Infra.Persistence"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Net\\Server\\OpenTTD.Net.Server.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Presentation.WorldRendering",
+                      "references":  [
+                                         "OpenTTD.World"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Presentation\\WorldRendering\\OpenTTD.Presentation.WorldRendering.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.SaveLoad",
+                      "references":  [
+                                         "OpenTTD.World",
+                                         "OpenTTD.Transport",
+                                         "OpenTTD.Vehicles",
+                                         "OpenTTD.Economy",
+                                         "OpenTTD.Infra.Persistence"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\SaveLoad\\OpenTTD.SaveLoad.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Transport",
+                      "references":  [
+                                         "OpenTTD.World"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Transport\\OpenTTD.Transport.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.UI",
+                      "references":  [
+                                         "OpenTTD.World",
+                                         "OpenTTD.Build",
+                                         "OpenTTD.Transport",
+                                         "OpenTTD.Vehicles",
+                                         "OpenTTD.Economy"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\UI\\OpenTTD.UI.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.Vehicles",
+                      "references":  [
+                                         "OpenTTD.Transport"
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Vehicles\\OpenTTD.Vehicles.asmdef"
+                  },
+                  {
+                      "name":  "OpenTTD.World",
+                      "references":  [
+
+                                     ],
+                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\World\\OpenTTD.World.asmdef"
+                  }
+              ],
+    "parseErrors":  [
+
+                    ],
+    "missingReferences":  [
+
+                          ],
+    "cycles":  [
+
+               ],
+    "duplicateNames":  [
+
+                       ]
+}
