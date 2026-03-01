@@ -10,3 +10,4 @@ Sprint 1 ADR index:
 - `0006-snapshot-fragmentation-reassembly-safety.md`
 - `0007-patch-lineage-mismatch-resync-policy.md`
 - `0008-entities-graphics-chunk-rendering-architecture.md`
+- `0009-rail-graph-storage-architecture.md`

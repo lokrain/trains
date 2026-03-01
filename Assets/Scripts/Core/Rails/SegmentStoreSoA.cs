@@ -162,6 +162,19 @@ namespace OpenTTD.Core.Rails
         }
 
         /// <summary>
+        /// Updates mutable metadata fields for a dense segment row.
+        /// </summary>
+        /// <param name="index">Dense row index.</param>
+        /// <param name="flags">New segment flags.</param>
+        /// <param name="speedClass">New speed class value.</param>
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public void SetDenseMetadata(int index, SegmentFlags flags, ushort speedClass)
+        {
+            _denseFlags[index] = (byte)flags;
+            _denseSpeed[index] = speedClass;
+        }
+
+        /// <summary>
         /// Disposes all native containers owned by this store.
         /// </summary>
         public void Dispose()

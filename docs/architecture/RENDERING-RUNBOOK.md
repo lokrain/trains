@@ -46,4 +46,4 @@ Operational guide for chunk mesh rendering in client presentation path.
 - Build succeeds.
 - Asmdef dependency validation passes.
 - Determinism-smoke scaffold file checks include rendering self-tests.
-- Render throughput benchmark scaffold artifact generated in CI.
+- Render benchmark EditMode tests (`RenderBench`) can be executed manually via Unity CLI.

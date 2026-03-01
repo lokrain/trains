@@ -1,0 +1,31 @@
+{
+    "gates":  [
+                  {
+                      "gate":  "asmdef-deps",
+                      "message":  "",
+                      "status":  "PASS"
+                  },
+                  {
+                      "gate":  "replication-selftests",
+                      "message":  "",
+                      "status":  "PASS"
+                  },
+                  {
+                      "gate":  "sprint4-evidence",
+                      "message":  "",
+                      "status":  "PASS"
+                  },
+                  {
+                      "gate":  "sprint5-evidence",
+                      "message":  "",
+                      "status":  "PASS"
+                  },
+                  {
+                      "gate":  "sprint6-evidence",
+                      "message":  "",
+                      "status":  "PASS"
+                  }
+              ],
+    "overall":  "PASS",
+    "generatedUtc":  "2026-03-01T12:26:29.3536655Z"
+}

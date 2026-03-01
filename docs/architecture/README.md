@@ -32,6 +32,9 @@ This directory contains production-reference architecture documents for the Open
   - Chunk rendering runtime tuning knobs and troubleshooting guidance
   - Bootstrap/invalidation budget controls and validation checklist
 
+- `RAIL-GRAPH-INVARIANTS.md`
+  - Rail graph invariants, mutation guard usage, and diagnostic failure guidance
+
 ## Usage
 
 Use these documents as the source of truth for:

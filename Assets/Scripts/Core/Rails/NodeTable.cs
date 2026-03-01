@@ -94,6 +94,28 @@ namespace OpenTTD.Core.Rails
         }
 
         /// <summary>
+        /// Removes node position mapping when the node has no attached adjacency.
+        /// </summary>
+        /// <param name="id">Node identifier.</param>
+        public void RemoveNodeMapping(NodeId id)
+        {
+            int index = (int)id.Value;
+            if (index <= 0 || index >= _posPacked.Length)
+            {
+                return;
+            }
+
+            uint packed = _posPacked[index];
+            if (packed != 0)
+            {
+                _posToNode.Remove(packed);
+            }
+
+            _posPacked[index] = 0;
+            _headEdge[index] = -1;
+        }
+
+        /// <summary>
         /// Gets adjacency-list head edge index for a node.
         /// </summary>
         /// <param name="id">Node identifier.</param>
@@ -113,6 +135,18 @@ namespace OpenTTD.Core.Rails
         public void SetHeadEdge(NodeId id, int head)
         {
             _headEdge[(int)id.Value] = head;
+        }
+
+        /// <summary>
+        /// Returns the highest usable node id index currently backed by table storage.
+        /// </summary>
+        public readonly int MaxNodeIndex
+        {
+            [MethodImpl(MethodImplOptions.AggressiveInlining)]
+            get
+            {
+                return _headEdge.Length - 1;
+            }
         }
 
         /// <summary>

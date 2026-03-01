@@ -1,8 +1,9 @@
 Set-StrictMode -Version Latest
-Set-StrictMode -Version Latest
 $ErrorActionPreference = "Stop"
 
 $results = New-Object System.Collections.Generic.List[object]
+$reportTitle = "Sprint Gates"
+$reportBaseName = "sprint-gates"
 
 function Invoke-Gate([string]$name, [scriptblock]$action)
 {
@@ -24,11 +25,12 @@ try
     Invoke-Gate "replication-selftests" { & ./.github/scripts/validate-replication-selftests.ps1 }
     Invoke-Gate "sprint4-evidence" { & ./.github/scripts/validate-sprint4-evidence.ps1 }
     Invoke-Gate "sprint5-evidence" { & ./.github/scripts/validate-sprint5-evidence.ps1 }
+    Invoke-Gate "sprint6-evidence" { & ./.github/scripts/validate-sprint6-evidence.ps1 }
 }
 finally
 {
     $lines = New-Object System.Collections.Generic.List[string]
-    $lines.Add("# Sprint 4 Gates") | Out-Null
+    $lines.Add("# $reportTitle") | Out-Null
     $lines.Add("") | Out-Null
     $lines.Add("| Gate | Status | Message |") | Out-Null
     $lines.Add("|---|---|---|") | Out-Null
@@ -48,7 +50,7 @@ finally
         $lines.Add("| $($r.Gate) | $($r.Status) | $msg |") | Out-Null
     }
 
-    Set-Content -Path sprint4-gates.md -Value ($lines -join "`n")
+    Set-Content -Path "$reportBaseName.md" -Value ($lines -join "`n")
 
     $overall = "PASS"
     foreach ($r in $results)
@@ -74,7 +76,7 @@ finally
         gates = $gateJson
     }
 
-    $jsonMap | ConvertTo-Json -Depth 8 | Set-Content -Path sprint4-gates.json
+    $jsonMap | ConvertTo-Json -Depth 8 | Set-Content -Path "$reportBaseName.json"
 }
 
-Write-Host "Sprint 4 gate run complete."
+Write-Host "$reportTitle run complete."

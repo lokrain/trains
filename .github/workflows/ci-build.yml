@@ -21,9 +21,9 @@ jobs:
       - name: Build Assembly-CSharp
         run: dotnet build Assembly-CSharp.csproj -c Release
 
-      - name: Run Sprint 4 gates
+      - name: Run sprint gates
         shell: pwsh
-        run: .github/scripts/run-sprint4-gates.ps1
+        run: .github/scripts/run-sprint-gates.ps1
 
       - name: Export asmdef dependency graph (Mermaid)
         shell: pwsh
@@ -44,17 +44,8 @@ jobs:
       - name: Upload Sprint 4 gates summary
         uses: actions/upload-artifact@v4
         with:
-          name: sprint4-gates
+          name: sprint-gates
           path: |
-            sprint4-gates.md
-            sprint4-gates.json
+            sprint-gates.md
+            sprint-gates.json
 
-      - name: Render throughput benchmark scaffold
-        shell: pwsh
-        run: .github/scripts/run-render-throughput-bench.ps1
-
-      - name: Upload render throughput benchmark scaffold
-        uses: actions/upload-artifact@v4
-        with:
-          name: render-throughput-bench
-          path: render-throughput-bench.md

@@ -20,3 +20,5 @@
 - Include build result.
 - Include deterministic/perf impact note.
 - Include tests or validation notes.
+- Ensure Unity EditMode/PlayMode CI tests are green for internal branches.
+- Fork PRs may skip Unity tests when repository secrets are unavailable.

@@ -6,3 +6,4 @@
 | replication-selftests | PASS | - |
 | sprint4-evidence | PASS | - |
 | sprint5-evidence | PASS | - |
+| sprint6-evidence | PASS | - |

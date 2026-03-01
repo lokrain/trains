@@ -1,0 +1,71 @@
+name: unity-tests
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: unity-tests-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  unity-tests-preflight:
+    runs-on: ubuntu-latest
+    outputs:
+      can-run-tests: ${{ steps.gate.outputs.can-run-tests }}
+    steps:
+      - name: Evaluate Unity test gate
+        id: gate
+        shell: bash
+        run: |
+          is_fork_pr="false"
+          if [ "${{ github.event_name }}" = "pull_request" ] && [ "${{ github.event.pull_request.head.repo.fork }}" = "true" ]; then
+            is_fork_pr="true"
+          fi
+
+          if [ -z "${{ secrets.UNITY_LICENSE }}" ] && [ "$is_fork_pr" = "true" ]; then
+            echo "::notice::Fork PR detected without UNITY_LICENSE. Unity tests are skipped by policy."
+            echo "can-run-tests=false" >> "$GITHUB_OUTPUT"
+          elif [ -z "${{ secrets.UNITY_LICENSE }}" ]; then
+            echo "::error::UNITY_LICENSE secret is required for internal Unity test runs."
+            exit 1
+          else
+            echo "Unity license secret found."
+            echo "can-run-tests=true" >> "$GITHUB_OUTPUT"
+          fi
+
+  unity-tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: unity-tests-preflight
+    if: ${{ needs.unity-tests-preflight.outputs.can-run-tests == 'true' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        test-mode: [ editmode, playmode ]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Run Unity ${{ matrix.test-mode }} tests
+        id: unity-tests
+        uses: game-ci/unity-test-runner@v4
+        env:
+          UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+        with:
+          projectPath: .
+          githubToken: ${{ secrets.GITHUB_TOKEN }}
+          testMode: ${{ matrix.test-mode }}
+          artifactsPath: artifacts/test-results/${{ matrix.test-mode }}
+
+      - name: Upload ${{ matrix.test-mode }} test artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: unity-${{ matrix.test-mode }}-test-results
+          path: ${{ steps.unity-tests.outputs.artifactsPath }}

@@ -262,6 +262,15 @@ When implementing a story, follow this order:
 - EditMode tests for pure logic (pathfinding, placement rules)
 - PlayMode tests for system integration
 
+### Testing Rules
+- All tests must be placed under `Assets/Tests`.
+- EditMode tests go in `Assets/Tests/EditMode`.
+- PlayMode tests go in `Assets/Tests/PlayMode`.
+- Never reference `UnityEditor` from PlayMode tests.
+- Do not manually reference `nunit.framework.dll`.
+- Test asmdefs must not be Auto Referenced.
+- Runtime assemblies must never reference test assemblies.
+
 ### 6. Update Docs + Changelog
 - Update README or feature docs
 - Add entry to CHANGELOG.md with format: `[Added] Feature description`
