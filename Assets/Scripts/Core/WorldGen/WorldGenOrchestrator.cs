@@ -20,8 +20,6 @@ namespace OpenTTD.Core.WorldGen
         {
             config = default;
             world = default;
-            error = WorldGenConfigError.None;
-
             if (configBlob.Length < WorldGenConfigBlob.SizeBytes)
             {
                 error = WorldGenConfigError.UnsupportedVersion;

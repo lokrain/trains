@@ -38,7 +38,13 @@ jobs:
             'Assets/Scripts/Core/Client/Net/WorldPatchReceiverSelfTest.cs',
             'Assets/Scripts/Core/Client/Net/SnapshotPatchEquivalenceSelfTest.cs',
             'Assets/Scripts/Core/Client/Net/PatchChainPropertySelfTest.cs',
+            'Assets/Scripts/Core/Client/Render/ChunkMeshDeterminismSelfTest.cs',
+            'Assets/Scripts/Core/Client/Render/ChunkMeshPatchEquivalenceSelfTest.cs',
+            'Assets/Scripts/Core/Client/Render/ChunkMeshSeamSelfTest.cs',
             'Assets/Scripts/Core/Server/Net/ChunkStreamSchedulerSelfTest.cs',
+            'Assets/Scripts/Presentation/WorldRendering/ChunkRenderInvalidationSelfTest.cs',
+            'Assets/Scripts/Presentation/WorldRendering/ChunkRenderBudgetSelfTest.cs',
+            'Assets/Scripts/Presentation/WorldRendering/ChunkPresenterLifecycleSelfTest.cs',
             'Assets/Scripts/Core/WorldGen/RiverSeamScanner.cs',
             'Assets/Scripts/Core/Simulation/WorldGenDeterminismRunner.cs',
             'docs/adr/0006-snapshot-fragmentation-reassembly-safety.md',
@@ -51,18 +57,21 @@ jobs:
             }
           }
 
-      - name: Validate Sprint 4 closure evidence files
+      - name: Run Sprint 4 gates
         shell: pwsh
-        run: .github/scripts/validate-sprint4-evidence.ps1
+        run: .github/scripts/run-sprint4-gates.ps1
 
-      - name: Validate asmdef dependency graph
-        shell: pwsh
-        run: .github/scripts/validate-asmdef-deps.ps1 -ShowGraph
+      - name: Upload asmdef dependency artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: asmdef-deps-determinism-smoke
+          path: |
+            asmdef-deps.json
 
-      - name: Validate replication self-test suite wiring
-        shell: pwsh
-        run: .github/scripts/validate-replication-selftests.ps1
-
-      - name: Export asmdef dependency report (JSON)
-        shell: pwsh
-        run: .github/scripts/validate-asmdef-deps.ps1 -AsJson -JsonPath asmdef-deps.json
+      - name: Upload Sprint 4 gates summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint4-gates-determinism-smoke
+          path: |
+            sprint4-gates.md
+            sprint4-gates.json

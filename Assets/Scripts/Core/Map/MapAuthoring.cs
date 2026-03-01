@@ -24,11 +24,16 @@ namespace OpenTTD.Core.Map
         [Tooltip("Prefab used to render generated land tiles")]
         public GameObject TilePrefab;
 
+        [Tooltip("Maximum chunk meshes to build per frame during initial mesh bootstrap")]
+        [Min(1)]
+        public int MaxChunkBuildsPerFrame = 32;
+
         private void OnValidate()
         {
             MapSize.x = math.max(1, MapSize.x);
             MapSize.y = math.max(1, MapSize.y);
             NoiseScale = math.max(0.001f, NoiseScale);
+            MaxChunkBuildsPerFrame = math.max(1, MaxChunkBuildsPerFrame);
         }
     }
 
@@ -60,7 +65,8 @@ namespace OpenTTD.Core.Map
             {
                 AddComponent(entity, new MapRenderConfigComponent
                 {
-                    TilePrefab = tilePrefabEntity
+                    TilePrefab = tilePrefabEntity,
+                    MaxChunkBuildsPerFrame = authoring.MaxChunkBuildsPerFrame
                 });
             }
         }

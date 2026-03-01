@@ -1,6 +1,6 @@
 {
     "root":  "Assets/Scripts",
-    "assemblyCount":  12,
+    "assemblyCount":  11,
     "nodes":  [
                   {
                       "name":  "OpenTTD.Build",
@@ -50,13 +50,6 @@
                                          "OpenTTD.Infra.Persistence"
                                      ],
                       "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Net\\Server\\OpenTTD.Net.Server.asmdef"
-                  },
-                  {
-                      "name":  "OpenTTD.Presentation.WorldRendering",
-                      "references":  [
-                                         "OpenTTD.World"
-                                     ],
-                      "path":  "D:\\Unity\\City Builder TDD\\Assets\\Scripts\\Presentation\\WorldRendering\\OpenTTD.Presentation.WorldRendering.asmdef"
                   },
                   {
                       "name":  "OpenTTD.SaveLoad",

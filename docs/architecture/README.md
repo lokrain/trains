@@ -28,6 +28,10 @@ This directory contains production-reference architecture documents for the Open
   - Asmdef dependency validation, cycle detection, and Mermaid graph generation
   - CI enforcement policy and one-way dependency guidance
 
+- `RENDERING-RUNBOOK.md`
+  - Chunk rendering runtime tuning knobs and troubleshooting guidance
+  - Bootstrap/invalidation budget controls and validation checklist
+
 ## Usage
 
 Use these documents as the source of truth for:

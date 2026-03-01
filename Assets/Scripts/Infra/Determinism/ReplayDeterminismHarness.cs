@@ -10,8 +10,8 @@ namespace OpenTTD.Infra.Determinism
     /// </summary>
     public sealed class ReplayDeterminismHarness
     {
-        private readonly List<HashSample> _baseline = new List<HashSample>(4096);
-        private readonly List<HashSample> _candidate = new List<HashSample>(4096);
+        private readonly List<HashSample> _baseline = new(4096);
+        private readonly List<HashSample> _candidate = new(4096);
 
         /// <summary>
         /// Clears all captured samples.
@@ -50,8 +50,8 @@ namespace OpenTTD.Infra.Determinism
             if (_baseline.Count != _candidate.Count)
             {
                 firstDivergentTick = _baseline.Count < _candidate.Count
-                    ? (_baseline.Count == 0 ? 0UL : _baseline[_baseline.Count - 1].Tick)
-                    : (_candidate.Count == 0 ? 0UL : _candidate[_candidate.Count - 1].Tick);
+                    ? (_baseline.Count == 0 ? 0UL : _baseline[^1].Tick)
+                    : (_candidate.Count == 0 ? 0UL : _candidate[^1].Tick);
                 return false;
             }
 

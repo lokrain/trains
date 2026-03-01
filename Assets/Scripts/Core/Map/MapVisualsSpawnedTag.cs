@@ -8,4 +8,12 @@ namespace OpenTTD.Core.Map
     public struct MapChunkMeshesBuiltTag : IComponentData
     {
     }
+
+    /// <summary>
+    /// Tracks incremental chunk mesh build progress for a map entity.
+    /// </summary>
+    public struct MapChunkMeshBuildProgress : IComponentData
+    {
+        public int NextChunkIndex;
+    }
 }

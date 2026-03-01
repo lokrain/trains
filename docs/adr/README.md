@@ -9,3 +9,4 @@ Sprint 1 ADR index:
 - `0005-asmdef-dependency-validation.md`
 - `0006-snapshot-fragmentation-reassembly-safety.md`
 - `0007-patch-lineage-mismatch-resync-policy.md`
+- `0008-entities-graphics-chunk-rendering-architecture.md`

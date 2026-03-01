@@ -13,6 +13,11 @@ namespace OpenTTD.Core.Client.Render
     /// </summary>
     public static class ChunkMeshBuilder
     {
+        private const int VertsPerSide = 65;
+        private const int QuadPerSide = 64;
+        private const int VertCount = VertsPerSide * VertsPerSide;
+        private const int IndexCount = QuadPerSide * QuadPerSide * 6;
+
         /// <summary>
         /// Builds or updates a mesh for a world chunk.
         /// </summary>
@@ -22,7 +27,7 @@ namespace OpenTTD.Core.Client.Render
         /// <param name="chunkY">Chunk Y coordinate.</param>
         /// <returns>Updated mesh instance.</returns>
         public static Mesh BuildOrUpdate(
-            Mesh mesh,
+            Mesh? mesh,
             ref WorldChunkArray world,
             int chunkX,
             int chunkY)
@@ -37,74 +42,32 @@ namespace OpenTTD.Core.Client.Render
 
             mesh.Clear();
 
-            const int vertsPerSide = 65;
-            const int vertCount = vertsPerSide * vertsPerSide;
-            const int quadPerSide = 64;
-            const int indexCount = quadPerSide * quadPerSide * 6;
-
-            var verts = new Vector3[vertCount];
-            var colors = new Color32[vertCount];
-            var indices = new int[indexCount];
+            var verts = new Vector3[VertCount];
+            var colors = new Color32[VertCount];
+            var indices = new int[IndexCount];
 
             int v = 0;
-            for (int y = 0; y < vertsPerSide; y++)
+            for (int y = 0; y < VertsPerSide; y++)
             {
-                for (int x = 0; x < vertsPerSide; x++)
+                for (int x = 0; x < VertsPerSide; x++)
                 {
-                    int wx = (chunkX << 6) + x;
-                    int wy = (chunkY << 6) + y;
+                    byte height = SampleHeight(ref world, chunkX, chunkY, x, y);
+                    Color32 color = SampleColor(ref world, chunkX, chunkY, x, y);
 
-                    byte h = TileAccessor.GetHeightClamped(ref world, wx, wy);
-
-                    int tx = math.min(wx, WorldConstants.MapW - 1);
-                    int ty = math.min(wy, WorldConstants.MapH - 1);
-                    TileAccessor.WorldToChunkLocal(tx, ty, out int cx, out int cy, out int lx, out int ly);
-                    ChunkSoA c = world.GetChunk(cx, cy);
-                    int tidx = WorldConstants.TileIndex(lx, ly);
-
-                    bool isRiver = c.RiverMask[tidx] != 0;
-                    bool isSea = !isRiver && c.Height[tidx] <= world.SeaLevel;
-
-                    Color32 col;
-                    if (isRiver)
-                    {
-                        col = new Color32(30, 80, 200, 255);
-                    }
-                    else if (isSea)
-                    {
-                        col = new Color32(10, 40, 140, 255);
-                    }
-                    else
-                    {
-                        byte biome = c.Biome[tidx];
-                        switch (biome)
-                        {
-                            case 2:
-                                col = new Color32(90, 90, 90, 255);
-                                break;
-                            case 1:
-                                col = new Color32(70, 120, 70, 255);
-                                break;
-                            default:
-                                col = new Color32(60, 150, 60, 255);
-                                break;
-                        }
-                    }
-
-                    verts[v] = new Vector3(x, h * 0.25f, y);
-                    colors[v] = col;
+                    verts[v] = new Vector3(x, height * 0.25f, y);
+                    colors[v] = color;
                     v++;
                 }
             }
 
             int ii = 0;
-            for (int y = 0; y < quadPerSide; y++)
+            for (int y = 0; y < QuadPerSide; y++)
             {
-                for (int x = 0; x < quadPerSide; x++)
+                for (int x = 0; x < QuadPerSide; x++)
                 {
-                    int i0 = x + y * vertsPerSide;
+                    int i0 = x + y * VertsPerSide;
                     int i1 = i0 + 1;
-                    int i2 = i0 + vertsPerSide;
+                    int i2 = i0 + VertsPerSide;
                     int i3 = i2 + 1;
 
                     indices[ii++] = i0;
@@ -123,6 +86,101 @@ namespace OpenTTD.Core.Client.Render
             mesh.RecalculateNormals();
             mesh.RecalculateBounds();
             return mesh;
+        }
+
+        /// <summary>
+        /// Partially updates mesh vertices/colors for a dirty tile rect and reuses existing topology.
+        /// Falls back to full rebuild when mesh layout is not initialized.
+        /// </summary>
+        public static Mesh BuildOrUpdateRect(
+            Mesh? mesh,
+            ref WorldChunkArray world,
+            int chunkX,
+            int chunkY,
+            byte minX,
+            byte minY,
+            byte maxX,
+            byte maxY)
+        {
+            if (mesh == null)
+            {
+                return BuildOrUpdate(null, ref world, chunkX, chunkY);
+            }
+
+            Vector3[] verts = mesh.vertices;
+            Color32[] colors = mesh.colors32;
+            if (verts == null || colors == null || verts.Length != VertCount || colors.Length != VertCount)
+            {
+                return BuildOrUpdate(mesh, ref world, chunkX, chunkY);
+            }
+
+            int vxMin = math.max(0, minX);
+            int vyMin = math.max(0, minY);
+            int vxMax = math.min(64, maxX + 1);
+            int vyMax = math.min(64, maxY + 1);
+
+            for (int y = vyMin; y <= vyMax; y++)
+            {
+                for (int x = vxMin; x <= vxMax; x++)
+                {
+                    byte height = SampleHeight(ref world, chunkX, chunkY, x, y);
+                    Color32 color = SampleColor(ref world, chunkX, chunkY, x, y);
+
+                    int vertexIndex = x + y * VertsPerSide;
+                    verts[vertexIndex] = new Vector3(x, height * 0.25f, y);
+                    colors[vertexIndex] = color;
+                }
+            }
+
+            mesh.vertices = verts;
+            mesh.colors32 = colors;
+            mesh.RecalculateNormals();
+            mesh.RecalculateBounds();
+            return mesh;
+        }
+
+        private static byte SampleHeight(ref WorldChunkArray world, int chunkX, int chunkY, int localX, int localY)
+        {
+            int worldX = (chunkX << 6) + localX;
+            int worldY = (chunkY << 6) + localY;
+            return TileAccessor.GetHeightClamped(ref world, worldX, worldY);
+        }
+
+        private static Color32 SampleColor(ref WorldChunkArray world, int chunkX, int chunkY, int localX, int localY)
+        {
+            int worldX = (chunkX << 6) + localX;
+            int worldY = (chunkY << 6) + localY;
+
+            int clampedWorldX = math.min(worldX, WorldConstants.MapW - 1);
+            int clampedWorldY = math.min(worldY, WorldConstants.MapH - 1);
+            TileAccessor.WorldToChunkLocal(clampedWorldX, clampedWorldY, out int sampleChunkX, out int sampleChunkY, out int sampleLocalX, out int sampleLocalY);
+
+            ChunkSoA chunk = world.GetChunk(sampleChunkX, sampleChunkY);
+            int tileIndex = WorldConstants.TileIndex(sampleLocalX, sampleLocalY);
+
+            bool isRiver = chunk.RiverMask[tileIndex] != 0;
+            if (isRiver)
+            {
+                return new Color32(30, 80, 200, 255);
+            }
+
+            bool isSea = chunk.Height[tileIndex] <= world.SeaLevel;
+            if (isSea)
+            {
+                return new Color32(10, 40, 140, 255);
+            }
+
+            return BiomeToColor(chunk.Biome[tileIndex]);
+        }
+
+        private static Color32 BiomeToColor(byte biome)
+        {
+            return biome switch
+            {
+                2 => new Color32(90, 90, 90, 255),
+                1 => new Color32(70, 120, 70, 255),
+                _ => new Color32(60, 150, 60, 255),
+            };
         }
     }
 }

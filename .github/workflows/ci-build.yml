@@ -21,17 +21,9 @@ jobs:
       - name: Build Assembly-CSharp
         run: dotnet build Assembly-CSharp.csproj -c Release
 
-      - name: Validate asmdef dependency graph
+      - name: Run Sprint 4 gates
         shell: pwsh
-        run: .github/scripts/validate-asmdef-deps.ps1 -ShowGraph
-
-      - name: Validate replication self-test suite wiring
-        shell: pwsh
-        run: .github/scripts/validate-replication-selftests.ps1
-
-      - name: Validate Sprint 4 closure evidence files
-        shell: pwsh
-        run: .github/scripts/validate-sprint4-evidence.ps1
+        run: .github/scripts/run-sprint4-gates.ps1
 
       - name: Export asmdef dependency graph (Mermaid)
         shell: pwsh
@@ -48,3 +40,21 @@ jobs:
           path: |
             asmdef-deps.mmd
             asmdef-deps.json
+
+      - name: Upload Sprint 4 gates summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: sprint4-gates
+          path: |
+            sprint4-gates.md
+            sprint4-gates.json
+
+      - name: Render throughput benchmark scaffold
+        shell: pwsh
+        run: .github/scripts/run-render-throughput-bench.ps1
+
+      - name: Upload render throughput benchmark scaffold
+        uses: actions/upload-artifact@v4
+        with:
+          name: render-throughput-bench
+          path: render-throughput-bench.md
